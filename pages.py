@@ -110,12 +110,17 @@ html[dir="ltr"] .toggle-eye{left:auto;right:12px}
   .grid-bg:before,.scanline,.ambient-orb,.dot,.login-card-glow,.orbit-ring,.orbit-ring2,.badge-glow,.login-status .live,.wrap{animation:none!important}
 }
 @media (max-width:820px), (pointer:coarse){
-  /* Phones/low-end GPUs: keep every element in place, just stop the continuous
-     repaint/compositing work that made the login screen feel heavy and jittery. */
-  .grid-bg:before,.scanline,.ambient-orb,.login-card-glow,.orbit-ring,.orbit-ring2,.badge-glow{animation:none!important}
+  /* Phones/low-end GPUs: the jank came from the blurred/filtered layers being
+     repainted every frame (conic-gradient + blur, glow blur, scanline gradient
+     shift) — those are the expensive ones and stay off on touch/small screens.
+     .orbit-ring / .orbit-ring2 (the spinning "planet" rings) only animate a
+     `transform`, which the compositor handles almost for free, so they keep
+     spinning on mobile instead of being frozen along with the heavy effects. */
+  .grid-bg:before,.scanline,.ambient-orb,.login-card-glow,.badge-glow{animation:none!important}
   .grid-bg:before{filter:blur(14px)}
   .login-card-glow{filter:blur(5px)}
   .badge-glow{filter:blur(4px)}
+  .orbit-ring,.orbit-ring2{will-change:transform}
 }
 </style>
 <style>
@@ -1052,6 +1057,10 @@ const DASH_EN_TERMS = {
   // Railway / service
   'دامنه عمومی Railway وارد شد؛ برای TCP خام باید TCP Proxy فعال باشد':'Railway public domain loaded; raw TCP requires TCP Proxy.','اطلاعات TCP Proxy ریل‌وی در این سرویس پیدا نشد':'Railway TCP Proxy information was not found for this service.',
   'همه دسته‌ها':'All categories','مورد انتخاب شده':'selected','اینباند جدید':'New Inbound','دسته جدید':'New Category','وضعیت':'Status','آدرس':'Address','ترافیک':'Traffic','کلاینت / اتصال':'Client / Connection','عملیات':'Actions','نام گروه':'Group Name','تعداد کانفیگ':'Config Count','لینک عمومی':'Public Link','حجم پیش‌فرض':'Default Traffic','قیمت (⭐)':'Price (⭐)','خروجی CSV':'CSV Export','برچسب':'Label','مدیریت ادمین‌ها':'Admin Management','ادمین جدید':'New Admin','نقش':'Role','آخرین ورود':'Last Login','مرکز پیام و خطا':'Message & Error Center','پاک‌کردن خطاها':'Clear Errors','خطاهای ثبت‌شده':'Recorded Errors','خطاهای Backend و Frontend با جزئیات مسیر و زمان':'Backend and frontend errors with route and time details','همه':'All','هشدار':'Warning','مرورگر':'Browser','بازنشانی ظاهر':'Reset Appearance','اندازه متن':'Text Size','تراکم پنل':'Panel Density','گوشه‌ها':'Corners','پوسته':'Theme','رنگ اصلی':'Accent Color','انیمیشن‌های پنل':'Panel Animations','سایدبار باز در دسکتاپ':'Open sidebar on desktop','Glow / نورپردازی':'Glow / Lighting','امنیت حساب':'Account Security','رمز فعلی':'Current Password','رمز جدید':'New Password','تکرار رمز جدید':'Repeat New Password','تغییر امن رمز':'Change Password','لغو نشست‌های قبلی':'Revoke Previous Sessions','توقف':'Stop','منوی مدیریت':'Admin Menu','پیام ساخت کانفیگ':'Config Created Message','پیام فروشگاه':'Store Message','پیام پرداخت موفق':'Payment Success Message','مانیتورینگ فوری منابع':'Instant resource monitoring','دریافت تنظیمات واقعی سرور':'Load real server settings','بارگذاری کامل رابط':'Hard Reload','دامنه فعلی پنل':'Current panel domain','در حال دریافت...':'Loading...','بروزرسانی':'Refresh','ساخت سریع':'Quick Create','کانفیگی یافت نشد':'No configs found','دسته‌بندی‌ها':'Categories','پلن‌های فروش':'Sales Plans','گروه‌های ساب':'Subscription Groups','ادمین‌ها':'Admins','پیام‌ها':'Messages','تنظیمات':'Settings',
+
+  // --- Added: fill remaining gaps found across dashboard toasts, confirm()
+  // dialogs, inbound builder, client manager and admin permission matrix ---
+  'اینباند حذف شود؟':'inbound(s) be deleted?','این کلاینت حذف شود؟':'Delete this client?','این کانفیگ حذف شود؟':'Delete this config?','این دسته حذف شود؟':'Delete this category?','این گروه حذف شود؟':'Delete this group?','این پلن حذف شود؟':'Delete this plan?','این ادمین حذف شود؟':'Delete this admin?','همه خطاهای ثبت‌شده پاک شوند؟':'Clear all recorded errors?','همه نشست‌های قبلی این حساب لغو شوند؟':'Revoke all previous sessions for this account?','دسته‌بندی‌ای وجود ندارد':'No categories found','بروزرسانی گروهی انجام شد':'Bulk update completed','حذف گروهی انجام شد':'Bulk delete completed','کانفیگ خودکار ساخته شد':'Auto config created','اینباند بروزرسانی شد':'Inbound updated','اینباند با موفقیت ساخته شد':'Inbound created successfully','خطا در ذخیره اینباند':'Error saving inbound','خطا در دریافت اطلاعات Railway':'Error fetching Railway information','کلاینت واقعی ساخته شد ✓':'Client created ✓','متن‌های ربات ذخیره شد ✓':'Bot texts saved ✓','خطاها پاک شدند ✓':'Errors cleared ✓','ذخیره شد و ربات با تنظیمات جدید ری‌استارت شد':'Saved — the bot restarted with the new settings','ذخیره شد — برای اعمال، ربات را روشن کنید':'Saved — turn the bot on to apply the changes','کلید Reality ساخته شد. Private Key را روی نود خودتان نگه دارید.':'Reality keypair generated. Keep the private key on your own node.','پورت باید بین 1 تا 65535 باشد':'Port must be between 1 and 65535','Shadowsocks فقط با TCP ساخته می‌شود':'Shadowsocks can only be created over TCP','رمز جدید باید حداقل ۸ کاراکتر باشد':'New password must be at least 8 characters','رمز جدید باید با رمز فعلی متفاوت باشد':'New password must be different from the current password','تکرار رمز یکسان نیست':'Password confirmation does not match','همه‌ی فیلدهای رمز عبور را پر کنید':'Please fill in all password fields','نام کاربری باید ۳ تا ۴۰ کاراکتر و بدون فاصله باشد':'Username must be 3–40 characters with no spaces','نام کاربری را وارد کنید':'Please enter a username','هر کلاینت UUID مستقل دارد و برای پروتکل‌های Live مستقیماً توسط Relay قابل احراز است.':'Each client has its own UUID and, for Live protocols, is authenticated directly by the relay.','این اینباند فعلاً فقط لینک تولید می‌کند. برای Client واقعی، ابتدا یک ترکیب Live مثل VLESS + WS/TCP/XHTTP انتخاب کنید.':'This inbound currently only generates links. For a real client, first choose a Live combination such as VLESS + WS/TCP/XHTTP.','مدیریت کلاینت‌ها':'Manage Clients','حجم (GB، خالی = والد)':'Traffic (GB, empty = parent)','انقضا (روز، 0 = والد)':'Expiry (days, 0 = parent)','بدون تغییر خالی بگذار':'Leave empty for no change','والد':'parent','ساخت اینباند حرفه‌ای':'Create Professional Inbound','پروتکل پایه، ترنسپورت و امنیت کاملاً تفکیک‌شده':'Base protocol, transport and security are fully separated','اول مشخص کن با چه پروتکلی کانفیگ ساخته شود':'First decide which protocol the config will use','حالا مسیر انتقال را جداگانه انتخاب کن':'Now choose the transport layer separately','TLS / Reality / None را مستقل از ترنسپورت انتخاب کن':'Choose TLS / Reality / None independently of the transport','فقط فیلدهای مرتبط با انتخاب بالا نمایش داده می‌شوند':'Only fields relevant to the selection above are shown','لینک اشتراک':'Subscription Link','اگر این لینک برای مشتری باز نمی‌شود، ابتدا از تب «تنظیمات» آدرس عمومی پنل را درست تنظیم کنید.':'If this link doesn\'t open for the customer, first set the panel\'s public URL correctly under the “Settings” tab.','دسته':'Category','گروه ساب جدید':'New Subscription Group','پلن':'Plan','پیشنهاد ویژه':'Featured offer','در حال اتصال':'Connecting','غیرفعال/منقضی':'Disabled/Expired','فعال - بدون اتصال':'Active – No connection','منقضی شده':'Expired','روز مانده':'days left','بدون انقضا':'No expiry','اتصال زنده':'Live connections','کل کانفیگ‌ها':'Total Configs','تعداد سفارش':'Order Count','ساخت و مدیریت اینباند':'Create & manage inbounds','سابسکریپشن':'Subscription','پیام‌ها و خطاها':'Messages & Errors','اینباند و کلاینت':'Inbounds & Clients','هشدارهای اخیر':'Recent Warnings','خطاهای مرورگر':'Browser Errors','خطای نامشخص':'Unknown error','سرور TCP روی پورت داخلی':'TCP server on internal port','گوش می‌دهد — این را در Railway به همین پورت داخلی متصل کن، نه به':'is listening — in Railway, point this at the same internal port, not at the main HTTP','مثلاً':'e.g.','اصلی':'main'
 };
 
 // ============================================================
@@ -1069,13 +1078,49 @@ const DASH_TERM_LIST = Object.keys(DASH_EN_TERMS).sort((a,b)=>b.length-a.length)
 const DASH_TRANSLATABLE_ATTRS = ['placeholder','title','aria-label'];
 let DASH_TRANSLATING = false;
 
+// Word-safe substring replace: a term is only replaced when the character
+// right before/after it is NOT another Persian letter. Without this guard a
+// short dictionary entry like 'کل' ("total") would also match *inside* an
+// unrelated word such as 'کلید' ("key") -> 'Totalید', silently corrupting
+// text that has nothing to do with the term. Persian suffixes attached with
+// a ZWNJ (e.g. 'کلاینت‌ها') still match correctly because \u200c is not a
+// Persian letter and is left outside this guard.
+const DASH_FA_LETTER_RE = /[\u0600-\u06FF]/;
+function dashReplaceTermSafely(out, term, replacement){
+  if(!out.includes(term)) return out;
+  let result = '';
+  let i = 0;
+  const len = term.length;
+  while(i < out.length){
+    if(out.startsWith(term, i)){
+      const before = i > 0 ? out[i - 1] : '';
+      const after = out[i + len] || '';
+      if(!DASH_FA_LETTER_RE.test(before) && !DASH_FA_LETTER_RE.test(after)){
+        result += replacement;
+        i += len;
+        continue;
+      }
+    }
+    result += out[i];
+    i++;
+  }
+  return result;
+}
+
 function dashTranslateValue(value, lang){
   if(lang !== 'en' || !value) return value || '';
   let out = String(value);
   for(const term of DASH_TERM_LIST){
-    if(out.includes(term)) out = out.split(term).join(DASH_EN_TERMS[term]);
+    out = dashReplaceTermSafely(out, term, DASH_EN_TERMS[term]);
   }
   return out;
+}
+
+// Shorthand for one-off strings that never live in the DOM long enough for
+// the tree-walker/observer to reach them — native confirm()/prompt() dialogs
+// in particular. Translates against the current dashboard language.
+function t(fa){
+  return dashTranslateValue(fa, typeof getDashLang === 'function' ? getDashLang() : 'fa');
 }
 
 function dashShouldTranslateElement(el){
@@ -1392,7 +1437,7 @@ async function bulkToggleLinks(active){
 }
 async function bulkDeleteLinks(){
   const sel = selectedLinkUuids(); if(!sel.length) return;
-  if(!confirm(`${sel.length} اینباند حذف شود؟`)) return;
+  if(!confirm(`${sel.length} ${t('اینباند حذف شود؟')}`)) return;
   try{ await Promise.all(sel.map(uid=>api(`/api/links/${uid}`, {method:'DELETE'}))); toast('حذف گروهی انجام شد'); loadLinks(); }
   catch(e){ toast(e.message, false); }
 }
@@ -1416,7 +1461,7 @@ async function createClient(uid){
   try{await api(`/api/links/${uid}/clients`,{method:'POST',body:JSON.stringify({label,limit_bytes:limit?limit*1024*1024*1024:0,expires_days:days})});toast('کلاینت واقعی ساخته شد ✓');openClients(uid);loadLinks();}catch(e){toast(e.message,false)}
 }
 async function deleteClient(uid,cid){
-  if(!confirm('این کلاینت حذف شود؟')) return;
+  if(!confirm(t('این کلاینت حذف شود؟'))) return;
   try{await api(`/api/links/${uid}/clients/${cid}`,{method:'DELETE'});toast('کلاینت حذف شد');openClients(uid);loadLinks();}catch(e){toast(e.message,false)}
 }
 async function copyText(v){try{await navigator.clipboard.writeText(v);toast('کپی شد ✓')}catch(e){prompt('کپی کنید:',v)}}
@@ -1442,7 +1487,7 @@ async function toggleLink(uid, active){
   catch(e){ toast(e.message, false); }
 }
 async function deleteLink(uid){
-  if(!confirm('این کانفیگ حذف شود؟')) return;
+  if(!confirm(t('این کانفیگ حذف شود؟'))) return;
   try{ await api(`/api/links/${uid}`, {method:'DELETE'}); toast('حذف شد'); loadLinks(); }
   catch(e){ toast(e.message, false); }
 }
@@ -1699,7 +1744,7 @@ async function submitCategory(cid){
   }catch(e){ toast(e.message, false); }
 }
 async function deleteCategory(cid){
-  if(!confirm('این دسته حذف شود؟')) return;
+  if(!confirm(t('این دسته حذف شود؟'))) return;
   try{ await api(`/api/categories/${cid}`, {method:'DELETE'}); toast('حذف شد'); loadCategories(); }
   catch(e){ toast(e.message, false); }
 }
@@ -1729,7 +1774,7 @@ async function submitSubGroup(){
   catch(e){ toast(e.message, false); }
 }
 async function deleteSubGroup(id){
-  if(!confirm('این گروه حذف شود؟')) return;
+  if(!confirm(t('این گروه حذف شود؟'))) return;
   try{ await api(`/api/subs/${id}`, {method:'DELETE'}); toast('حذف شد'); loadSubGroups(); }
   catch(e){ toast(e.message, false); }
 }
@@ -1770,7 +1815,7 @@ async function submitPlan(pid){
   }catch(e){ toast(e.message, false); }
 }
 async function deletePlan(pid){
-  if(!confirm('این پلن حذف شود؟')) return;
+  if(!confirm(t('این پلن حذف شود؟'))) return;
   try{ await api(`/api/plans/${pid}`, {method:'DELETE'}); toast('حذف شد'); loadPlans(); }
   catch(e){ toast(e.message, false); }
 }
@@ -1844,7 +1889,7 @@ async function toggleAdmin(id, active){
   catch(e){ toast(e.message, false); }
 }
 async function deleteAdmin(id){
-  if(!confirm('این ادمین حذف شود؟')) return;
+  if(!confirm(t('این ادمین حذف شود؟'))) return;
   try{ await api(`/api/admins/${id}`, {method:'DELETE'}); toast('حذف شد'); loadAdmins(); }
   catch(e){ toast(e.message, false); }
 }
@@ -1878,7 +1923,7 @@ function messageIcon(level, source){
   return 'info-circle';
 }
 async function clearErrors(){
-  if(!confirm('همه خطاهای ثبت‌شده پاک شوند؟')) return;
+  if(!confirm(t('همه خطاهای ثبت‌شده پاک شوند؟'))) return;
   try{await api('/api/errors/clear',{method:'POST'});toast('خطاها پاک شدند ✓');loadMessages();}
   catch(e){toast(e.message,false);}
 }
@@ -1988,7 +2033,7 @@ function passwordMeter(){
   if(hint) hint.textContent = val ? `قدرت رمز: ${lv.label} — حداقل ۸ کاراکتر، ترکیب حروف بزرگ/کوچک، عدد و نماد پیشنهاد می‌شود.` : 'حداقل ۸ کاراکتر، ترجیحاً ترکیب حروف، عدد و نماد.';
 }
 async function revokeOtherSessions(){
-  if(!confirm('همه نشست‌های قبلی این حساب لغو شوند؟')) return;
+  if(!confirm(t('همه نشست‌های قبلی این حساب لغو شوند؟'))) return;
   try{const r=await api('/api/security/revoke-other-sessions',{method:'POST'});toast(`${r.revoked||0} نشست قبلی لغو شد ✓`)}catch(e){toast(e.message,false)}
 }
 function fmtDiagBytes(n){return fmtBytes(Number(n||0))}
