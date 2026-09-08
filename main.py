@@ -4316,6 +4316,32 @@ def subscription_metadata_headers(used_bytes: int, limit_bytes: int, expires_at,
     }
 
 # ============================================================
+# ONE SUBSCRIPTION LINK FOR BOTH APPS AND BROWSERS
+# ============================================================
+# VPN clients (v2rayNG, v2rayN, Hiddify, Clash, sing-box, ...) send a
+# non-browser User-Agent and never ask for text/html, so they keep getting
+# the raw base64 config feed below exactly as before. A normal visit from a
+# desktop/mobile browser is redirected to the rich HTML portal instead — the
+# customer only ever needs to hand out a single /sub/{uuid} link, whether
+# it's pasted into an app or opened by hand to check usage.
+_SUB_CLIENT_UA_HINTS = (
+    "v2ray", "v2rayng", "v2rayn", "hiddify", "clash", "sing-box", "sing_box",
+    "shadowrocket", "streisand", "nekobox", "nekoray", "karing", "matsuri",
+    "kitsunebi", "quantumult", "surge", "loon", "stash", "husi", "foxray",
+    "v2box", "happ", "flclash", "mihomo", "openclash", "passwall",
+    "npvtunnel", "netch", "qv2ray", "leaf", "outline", "throne", "exclave",
+    "okhttp", "curl", "wget", "python", "go-http", "libcurl",
+)
+_SUB_BROWSER_UA_HINTS = ("mozilla", "chrome", "safari", "firefox", "edg/", "opr/", "webkit", "gecko")
+
+def _subscription_wants_browser_view(request: Request) -> bool:
+    ua = (request.headers.get("user-agent") or "").lower()
+    accept = (request.headers.get("accept") or "").lower()
+    if not ua or any(h in ua for h in _SUB_CLIENT_UA_HINTS):
+        return False
+    return "text/html" in accept and any(h in ua for h in _SUB_BROWSER_UA_HINTS)
+
+# ============================================================
 # SINGLE SUB
 # ============================================================
 
@@ -4333,6 +4359,9 @@ async def subscription_single(
             status_code=404,
             detail="not found or inactive",
         )
+
+    if _subscription_wants_browser_view(request):
+        return RedirectResponse(url=f"/subscription/{uuid}", status_code=307)
 
     host = get_host(request)
     clean_ips = link.get("clean_ips") or []
